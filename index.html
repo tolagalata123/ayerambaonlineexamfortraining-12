@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>AYER AMBA EXAM | CROSS-DEVICE SYNC | WORKING UPLOAD</title>
+    <title>AYER AMBA EXAM | CROSS-DEVICE SYNC</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif; }
         body {
@@ -219,6 +219,7 @@
             border-radius: 60px;
             margin-bottom: 25px;
             text-align: center;
+            font-weight: 500;
         }
         
         .timer-panel {
@@ -305,7 +306,7 @@
             </div>
         </div>
 
-        <!-- STUDENT SECTION (simplified) -->
+        <!-- STUDENT SECTION -->
         <div id="studentSection" class="hidden">
             <div id="studentLogin" class="login-container">
                 <h2>👨‍🎓 Student Login</h2>
@@ -445,8 +446,8 @@
                         </div>
                         <input type="file" id="questionFile" accept=".txt,.csv" style="margin: 20px 0;">
                         <div class="button-group" style="display: flex; gap: 15px; justify-content: center;">
-                            <button class="btn btn-danger" id="replaceBtn" onclick="uploadQuestions(true)">🗑️ Replace All & Upload</button>
-                            <button class="btn btn-primary" id="appendBtn" onclick="uploadQuestions(false)">➕ Append to Existing</button>
+                            <button class="btn btn-danger" onclick="uploadQuestions(true)">🗑️ Replace All & Upload</button>
+                            <button class="btn btn-primary" onclick="uploadQuestions(false)">➕ Append to Existing</button>
                         </div>
                         <div id="uploadProgress" style="margin-top: 20px;"></div>
                     </div>
@@ -472,7 +473,9 @@
                     <input type="text" id="scoreSearch" placeholder="Search student..." onkeyup="filterScores()">
                     <div style="overflow-x: auto; margin-top: 15px;">
                         <table>
-                            <thead><tr><th>Student</th><th>Score</th><th>Total</th><th>%</th><th>Result</th><th>Date</th></tr></thead>
+                            <thead>
+                                <tr><th>Student</th><th>Score</th><th>Total</th><th>%</th><th>Result</th><th>Date</th></tr>
+                            </thead>
                             <tbody id="scoresBody"></tbody>
                         </table>
                     </div>
@@ -484,6 +487,7 @@
 </div>
 
 <script>
+    // ========== YOUR GOOGLE APPS SCRIPT URL ==========
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypm4MjrH6myJDBvH6H00zTJZJ-00_UJe_Xx5B-fHJBRYDx9oAyT1zOm2hoSLjknQOoVA/exec";
     
     let currentUser = "", currentPassword = "";
@@ -492,6 +496,36 @@
     let allScores = [];
     let examEnabled = true;
     let answersEnabled = true;
+    
+    // ========== FETCH QUESTIONS FROM GOOGLE SHEETS ==========
+    async function fetchQuestions() {
+        try {
+            document.getElementById("syncStatus").innerHTML = "🔄 Fetching questions from Google Sheets...";
+            const response = await fetch(`${SCRIPT_URL}?action=get`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log("Fetched data:", data);
+            
+            if (Array.isArray(data)) {
+                questions = data;
+                document.getElementById("syncStatus").innerHTML = `✅ Loaded ${questions.length} questions successfully!`;
+            } else {
+                questions = [];
+                document.getElementById("syncStatus").innerHTML = "⚠️ No questions found. Please upload questions.";
+            }
+            
+            return questions;
+        } catch(error) {
+            console.error("Error fetching questions:", error);
+            document.getElementById("syncStatus").innerHTML = "⚠️ Connection error. Check Google Apps Script URL.";
+            questions = [];
+            return [];
+        }
+    }
     
     // ========== UPLOAD QUESTIONS FUNCTION ==========
     async function uploadQuestions(replaceMode) {
@@ -658,18 +692,6 @@
     }
     
     // ========== QUESTION FUNCTIONS ==========
-    async function loadQuestions() {
-        try {
-            const resp = await fetch(SCRIPT_URL);
-            const data = await resp.json();
-            questions = Array.isArray(data) ? data : [];
-            document.getElementById("syncStatus").innerHTML = `✅ Loaded ${questions.length} questions`;
-            return questions;
-        } catch(e) {
-            return questions;
-        }
-    }
-    
     async function addSingleQuestion() {
         const q = document.getElementById("newQuestion").value.trim();
         const a = document.getElementById("optA").value.trim();
@@ -721,7 +743,7 @@
     }
     
     async function refreshQuestions() {
-        await loadQuestions();
+        await fetchQuestions();
         displayQuestionsList();
         updateStats();
     }
@@ -809,7 +831,7 @@
         document.getElementById("studentExamArea").classList.remove("hidden");
         document.getElementById("studentHistoryArea").classList.add("hidden");
         if(!questions.length) {
-            loadQuestions().then(() => startExam());
+            fetchQuestions().then(() => startExam());
         } else {
             startExam();
         }
@@ -849,6 +871,7 @@
     }
     
     function showQuestion() {
+        if(!questions.length) return;
         let q = questions[currentIdx];
         document.getElementById("questionCounter").innerHTML = `<span style="background:#1e3c72; padding:8px 24px; border-radius:40px; color:white;">Question ${currentIdx+1}/${questions.length}</span>`;
         document.getElementById("questionText").innerHTML = q.q;
@@ -1051,8 +1074,9 @@
         await loadSettings();
     }, 5000);
     
+    // Initialize
     (async function init() {
-        await loadQuestions();
+        await fetchQuestions();
         await loadScores();
         await loadSettings();
         updateStats();
