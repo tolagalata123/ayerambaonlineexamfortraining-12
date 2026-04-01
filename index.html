@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>AYER AMBA EXAM | CROSS-DEVICE SYNC | FIXED SWITCHES</title>
+    <title>AYER AMBA EXAM | CROSS-DEVICE SYNC | WORKING UPLOAD</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif; }
         body {
@@ -153,6 +153,45 @@
             margin-top: 20px;
         }
         
+        .upload-area {
+            background: #eef2ff;
+            padding: 28px;
+            border-radius: 32px;
+            margin: 20px 0;
+            border: 2px dashed #1e3c72;
+            text-align: center;
+        }
+        
+        .format-example {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+            margin-top: 15px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e2e8f0;
+            border-radius: 40px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #10b981;
+            color: white;
+            text-align: center;
+            line-height: 30px;
+            font-size: 13px;
+            font-weight: bold;
+            transition: width 0.3s;
+        }
+        
         .question-card, .student-card, .score-card {
             background: white;
             padding: 18px;
@@ -222,13 +261,20 @@
             border-left: 6px solid #8b5cf6;
         }
         
-        .sync-indicator {
-            font-size: 12px;
-            margin-left: 10px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: #eef2ff;
+        .question-dot { 
+            width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 6px; cursor: pointer; font-weight: bold;
         }
+        .question-dot.answered { background: #10b981; color: white; }
+        .question-dot.unanswered { background: #e2e8f0; color: #334155; }
+        .question-dot.current { border: 3px solid #1e3c72; background: #1e3c72; color: white; }
+        
+        .delete-btn { background: #dc2626; color: white; border: none; padding: 6px 16px; border-radius: 40px; cursor: pointer; }
+        .pass { color: #10b981; background: #d1fae5; padding: 4px 12px; border-radius: 40px; display: inline-block; }
+        .fail { color: #dc2626; background: #fee2e2; padding: 4px 12px; border-radius: 40px; display: inline-block; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #1e293b; color: white; }
         
         @media (max-width: 700px) { .box { padding: 20px; } .timer-panel { font-size: 1.2rem; } }
     </style>
@@ -237,7 +283,7 @@
 <div class="container">
     <div class="header">
         <h1>🏫 AYER AMBA SECONDARY SCHOOL<br>EXAM SYSTEM WITH CROSS-DEVICE SYNC</h1>
-        <p>⚡ Switches sync across ALL devices (PC, Phone, Tablet)</p>
+        <p>⚡ Upload questions from PC | Switches sync across ALL devices</p>
     </div>
     <div class="box">
         <div class="sync-status" id="syncStatus">🔄 Connecting to cloud database...</div>
@@ -254,11 +300,12 @@
                 <button class="btn btn-warning" onclick="showAdminSection()">🔐 ADMIN PANEL</button>
             </div>
             <div style="background: #eef2ff; padding: 20px; border-radius: 28px; text-align: center;">
+                <p>✅ Upload questions using the format: Q:, A:, B:, C:, D:, ANS:</p>
                 <p>✅ Settings saved to Google Sheets - syncs across all devices instantly!</p>
             </div>
         </div>
 
-        <!-- STUDENT SECTION -->
+        <!-- STUDENT SECTION (simplified) -->
         <div id="studentSection" class="hidden">
             <div id="studentLogin" class="login-container">
                 <h2>👨‍🎓 Student Login</h2>
@@ -317,7 +364,7 @@
                 <button class="btn btn-secondary" onclick="showHomeSection()">Back</button>
             </div>
             <div id="adminDashboard" class="hidden">
-                <h2>🛠️ Admin Panel <span id="syncIndicator" class="sync-indicator">🔄 Synced</span></h2>
+                <h2>🛠️ Admin Panel <span id="syncIndicator" style="font-size:12px; margin-left:10px;">🔄 Synced</span></h2>
                 
                 <div class="control-card">
                     <div><strong>🔘 EXAM ACCESS</strong><br><small>OFF = Students cannot take exams</small></div>
@@ -356,31 +403,81 @@
                         <div class="stat-card"><div class="stat-number" id="adminTotalStudents">0</div><div>Students</div></div>
                         <div class="stat-card"><div class="stat-number" id="adminTotalExams">0</div><div>Exams</div></div>
                     </div>
-                    <div style="margin-top:15px; padding:15px; background:#eef2ff; border-radius:20px;">
-                        <strong>📡 Cross-Device Sync Active</strong><br>
-                        Changes save to Google Sheets and sync to ALL devices instantly!
-                    </div>
                 </div>
+                
                 <div id="adminAdd" class="admin-content hidden">
-                    <input type="text" id="newQuestion" placeholder="Question">
+                    <h3>➕ Add Single Question</h3>
+                    <input type="text" id="newQuestion" placeholder="Question text">
                     <input type="text" id="optA" placeholder="Option A">
                     <input type="text" id="optB" placeholder="Option B">
                     <input type="text" id="optC" placeholder="Option C">
                     <input type="text" id="optD" placeholder="Option D">
-                    <select id="correctAnswer"><option value="">Correct</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
-                    <button class="btn btn-success" onclick="addQuestion()">Add</button>
-                    <div id="addMsg"></div>
+                    <select id="correctAnswer">
+                        <option value="">-- Correct Answer --</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                    </select>
+                    <button class="btn btn-success" onclick="addSingleQuestion()">Add Question</button>
+                    <div id="addMsg" style="margin-top:10px;"></div>
                 </div>
+                
                 <div id="adminUpload" class="admin-content hidden">
-                    <input type="file" id="fileInput" accept=".txt">
-                    <button class="btn btn-primary" onclick="uploadFile(false)">Append</button>
-                    <button class="btn btn-danger" onclick="uploadFile(true)">Replace All</button>
-                    <div id="uploadProgress"></div>
+                    <h3>📂 Upload Questions from PC</h3>
+                    <div class="upload-area">
+                        <p><strong>📄 FILE FORMAT:</strong> Each question separated by blank line. Use Q:, A:, B:, C:, D:, ANS: format.</p>
+                        <div class="format-example">
+                            <strong>Example:</strong><br>
+                            Q: What is the powerhouse of the cell?<br>
+                            A: Nucleus<br>
+                            B: Mitochondria<br>
+                            C: Ribosome<br>
+                            D: Golgi<br>
+                            ANS: B<br>
+                            <br>
+                            Q: What is 2 + 2?<br>
+                            A: 3<br>
+                            B: 4<br>
+                            C: 5<br>
+                            D: 6<br>
+                            ANS: B
+                        </div>
+                        <input type="file" id="questionFile" accept=".txt,.csv" style="margin: 20px 0;">
+                        <div class="button-group" style="display: flex; gap: 15px; justify-content: center;">
+                            <button class="btn btn-danger" id="replaceBtn" onclick="uploadQuestions(true)">🗑️ Replace All & Upload</button>
+                            <button class="btn btn-primary" id="appendBtn" onclick="uploadQuestions(false)">➕ Append to Existing</button>
+                        </div>
+                        <div id="uploadProgress" style="margin-top: 20px;"></div>
+                    </div>
                 </div>
-                <div id="adminQuestions" class="admin-content hidden"><div id="questionList"></div><button class="btn btn-danger" onclick="deleteAllQuestions()">Delete All</button></div>
-                <div id="adminStudents" class="admin-content hidden"><div id="studentList"></div><button class="btn btn-danger" onclick="deleteAllStudents()">Delete All</button></div>
-                <div id="adminScores" class="admin-content hidden"><input type="text" id="scoreSearch" placeholder="Search..." onkeyup="filterScores()"><div style="overflow-x:auto;"><table><thead><tr><th>Student</th><th>Score</th><th>Total</th><th>%</th><th>Result</th><th>Date</th></tr></thead><tbody id="scoresBody"></tbody></table></div></div>
-                <button class="btn btn-danger" onclick="logout()">Logout</button>
+                
+                <div id="adminQuestions" class="admin-content hidden">
+                    <h3>📋 Manage Questions</h3>
+                    <div class="button-group">
+                        <button class="btn btn-danger" onclick="deleteAllQuestions()">🗑️ Delete ALL Questions</button>
+                        <button class="btn btn-primary" onclick="refreshQuestions()">🔄 Refresh</button>
+                    </div>
+                    <div id="questionList"></div>
+                </div>
+                
+                <div id="adminStudents" class="admin-content hidden">
+                    <h3>👥 Student Registry</h3>
+                    <div id="studentList"></div>
+                    <button class="btn btn-danger" onclick="deleteAllStudents()">Delete All Students</button>
+                </div>
+                
+                <div id="adminScores" class="admin-content hidden">
+                    <h3>🏆 Scoreboard</h3>
+                    <input type="text" id="scoreSearch" placeholder="Search student..." onkeyup="filterScores()">
+                    <div style="overflow-x: auto; margin-top: 15px;">
+                        <table>
+                            <thead><tr><th>Student</th><th>Score</th><th>Total</th><th>%</th><th>Result</th><th>Date</th></tr></thead>
+                            <tbody id="scoresBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <button class="btn btn-danger" onclick="logout()" style="margin-top:20px;">Logout</button>
             </div>
         </div>
     </div>
@@ -393,12 +490,110 @@
     let questions = [], answers = {}, currentIdx = 0, examSubmitted = false, examActive = false;
     let timer = null, timeLeft = 0;
     let allScores = [];
-    
-    // Settings
     let examEnabled = true;
     let answersEnabled = true;
     
-    // ========== SETTINGS FUNCTIONS (CROSS-DEVICE SYNC) ==========
+    // ========== UPLOAD QUESTIONS FUNCTION ==========
+    async function uploadQuestions(replaceMode) {
+        const fileInput = document.getElementById("questionFile");
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert("📁 Please select a .txt file first");
+            return;
+        }
+        
+        const progressDiv = document.getElementById("uploadProgress");
+        progressDiv.innerHTML = '<div class="progress-bar"><div class="progress-fill" style="width:10%">📖 Reading file...</div></div>';
+        
+        const reader = new FileReader();
+        reader.onload = async function(ev) {
+            const text = ev.target.result;
+            const blocks = text.split(/\n\s*\n/);
+            let parsedQuestions = [];
+            
+            for (let block of blocks) {
+                if (!block.trim()) continue;
+                const lines = block.split('\n');
+                let q = "", opts = ["", "", "", ""], ansLetter = "";
+                
+                for (let line of lines) {
+                    line = line.trim();
+                    if (line.startsWith("Q:") || line.startsWith("Q:")) {
+                        q = line.substring(2).trim();
+                    } else if (line.startsWith("A:")) {
+                        opts[0] = line.substring(2).trim();
+                    } else if (line.startsWith("B:")) {
+                        opts[1] = line.substring(2).trim();
+                    } else if (line.startsWith("C:")) {
+                        opts[2] = line.substring(2).trim();
+                    } else if (line.startsWith("D:")) {
+                        opts[3] = line.substring(2).trim();
+                    } else if (line.startsWith("ANS:")) {
+                        ansLetter = line.substring(4).trim().toUpperCase();
+                    }
+                }
+                
+                if (q && opts[0] && opts[1] && opts[2] && opts[3] && "ABCD".includes(ansLetter)) {
+                    const answerIndex = "ABCD".indexOf(ansLetter);
+                    parsedQuestions.push({
+                        question: q,
+                        optA: opts[0],
+                        optB: opts[1],
+                        optC: opts[2],
+                        optD: opts[3],
+                        answer: opts[answerIndex]
+                    });
+                }
+            }
+            
+            if (parsedQuestions.length === 0) {
+                progressDiv.innerHTML = '<span style="color:#e74c3c;">❌ No valid questions found. Check format (Q:, A:, B:, C:, D:, ANS:).</span>';
+                return;
+            }
+            
+            // Replace mode - delete all existing questions
+            if (replaceMode) {
+                progressDiv.innerHTML = '<div class="progress-bar"><div class="progress-fill" style="width:20%">🗑️ Deleting existing questions...</div></div>';
+                try {
+                    await fetch(`${SCRIPT_URL}?action=delete`);
+                    await new Promise(r => setTimeout(r, 500));
+                } catch(e) {
+                    console.error("Delete error:", e);
+                }
+            }
+            
+            let successCount = 0;
+            for (let i = 0; i < parsedQuestions.length; i++) {
+                const qb = parsedQuestions[i];
+                const percentDone = Math.round(((i + 1) / parsedQuestions.length) * 100);
+                progressDiv.innerHTML = `<div class="progress-bar"><div class="progress-fill" style="width:${percentDone}%">📤 Uploading ${i+1}/${parsedQuestions.length} (${percentDone}%)</div></div>`;
+                
+                const url = `${SCRIPT_URL}?action=add&question=${encodeURIComponent(qb.question)}&optA=${encodeURIComponent(qb.optA)}&optB=${encodeURIComponent(qb.optB)}&optC=${encodeURIComponent(qb.optC)}&optD=${encodeURIComponent(qb.optD)}&answer=${encodeURIComponent(qb.answer)}`;
+                
+                try {
+                    const res = await fetch(url);
+                    const result = await res.json();
+                    if (result.success) successCount++;
+                } catch(e) {
+                    console.error("Upload error:", e);
+                }
+                await new Promise(r => setTimeout(r, 50));
+            }
+            
+            progressDiv.innerHTML = `<span style="color:#10b981;">✅ Upload complete! ${successCount}/${parsedQuestions.length} questions imported successfully.</span>`;
+            setTimeout(() => { progressDiv.innerHTML = ""; }, 4000);
+            
+            // Refresh questions list
+            await refreshQuestions();
+            updateStats();
+            fileInput.value = "";
+        };
+        
+        reader.readAsText(file, "UTF-8");
+    }
+    
+    // ========== SETTINGS FUNCTIONS ==========
     async function loadSettings() {
         try {
             const resp = await fetch(`${SCRIPT_URL}?action=getSettings`);
@@ -406,8 +601,6 @@
             examEnabled = data.examAccess === true || data.examAccess === "true";
             answersEnabled = data.answersView === true || data.answersView === "true";
             updateUIFromSettings();
-            document.getElementById("syncIndicator").innerHTML = "✅ Synced";
-            setTimeout(() => { if(document.getElementById("syncIndicator")) document.getElementById("syncIndicator").innerHTML = "🔄 Synced"; }, 2000);
             return true;
         } catch(e) {
             examEnabled = localStorage.getItem("examEnabled") !== "false";
@@ -422,14 +615,7 @@
         examEnabled = toggle.checked;
         await saveSettingsToSheet();
         updateUIFromSettings();
-        
-        // Show feedback
-        const indicator = document.getElementById("syncIndicator");
-        indicator.innerHTML = "💾 Saving...";
-        setTimeout(() => { if(indicator) indicator.innerHTML = "✅ Saved!"; }, 500);
-        setTimeout(() => { if(indicator) indicator.innerHTML = "🔄 Synced"; }, 2000);
-        
-        alert(examEnabled ? "✅ Exam ENABLED - All devices updated" : "⛔ Exam DISABLED - All devices updated");
+        alert(examEnabled ? "✅ Exam ENABLED" : "⛔ Exam DISABLED");
     }
     
     async function saveAnswersSetting() {
@@ -437,12 +623,6 @@
         answersEnabled = toggle.checked;
         await saveSettingsToSheet();
         updateUIFromSettings();
-        
-        const indicator = document.getElementById("syncIndicator");
-        indicator.innerHTML = "💾 Saving...";
-        setTimeout(() => { if(indicator) indicator.innerHTML = "✅ Saved!"; }, 500);
-        setTimeout(() => { if(indicator) indicator.innerHTML = "🔄 Synced"; }, 2000);
-        
         alert(answersEnabled ? "✅ Answers View ENABLED" : "⛔ Answers View DISABLED");
     }
     
@@ -475,43 +655,124 @@
             answersBadge.className = answersEnabled ? "status-badge status-enabled" : "status-badge status-disabled";
             answersBadge.innerHTML = answersEnabled ? "🟢 VISIBLE" : "🔴 HIDDEN";
         }
-        
-        // If student is viewing exam, update display
-        const examArea = document.getElementById("studentExamArea");
-        if(examArea && !examArea.classList.contains("hidden")) {
-            if(!examEnabled) {
-                document.getElementById("examDisabledMessage").classList.remove("hidden");
-                document.getElementById("examContent").classList.add("hidden");
-            } else if(questions.length > 0) {
-                document.getElementById("examDisabledMessage").classList.add("hidden");
-                document.getElementById("examContent").classList.remove("hidden");
-            }
+    }
+    
+    // ========== QUESTION FUNCTIONS ==========
+    async function loadQuestions() {
+        try {
+            const resp = await fetch(SCRIPT_URL);
+            const data = await resp.json();
+            questions = Array.isArray(data) ? data : [];
+            document.getElementById("syncStatus").innerHTML = `✅ Loaded ${questions.length} questions`;
+            return questions;
+        } catch(e) {
+            return questions;
         }
     }
     
-    function startSettingsSync() {
-        setInterval(async () => {
-            const oldExam = examEnabled;
-            const oldAnswers = answersEnabled;
-            await loadSettings();
-            if(oldExam !== examEnabled || oldAnswers !== answersEnabled) {
-                updateUIFromSettings();
-                // Refresh student view if needed
-                const examArea = document.getElementById("studentExamArea");
-                if(examArea && !examArea.classList.contains("hidden")) {
-                    if(!examEnabled) {
-                        document.getElementById("examDisabledMessage").classList.remove("hidden");
-                        document.getElementById("examContent").classList.add("hidden");
-                    } else if(questions.length > 0) {
-                        document.getElementById("examDisabledMessage").classList.add("hidden");
-                        document.getElementById("examContent").classList.remove("hidden");
-                    }
-                }
-            }
-        }, 3000);
+    async function addSingleQuestion() {
+        const q = document.getElementById("newQuestion").value.trim();
+        const a = document.getElementById("optA").value.trim();
+        const b = document.getElementById("optB").value.trim();
+        const c = document.getElementById("optC").value.trim();
+        const d = document.getElementById("optD").value.trim();
+        const correct = document.getElementById("correctAnswer").value;
+        
+        if(!q || !a || !b || !c || !d || !correct) {
+            document.getElementById("addMsg").innerHTML = "❌ Please fill all fields";
+            return;
+        }
+        
+        const ansText = {A:a, B:b, C:c, D:d}[correct];
+        const url = `${SCRIPT_URL}?action=add&question=${encodeURIComponent(q)}&optA=${encodeURIComponent(a)}&optB=${encodeURIComponent(b)}&optC=${encodeURIComponent(c)}&optD=${encodeURIComponent(d)}&answer=${encodeURIComponent(ansText)}`;
+        
+        try {
+            await fetch(url);
+            document.getElementById("addMsg").innerHTML = "✅ Question added successfully!";
+            document.getElementById("newQuestion").value = "";
+            document.getElementById("optA").value = "";
+            document.getElementById("optB").value = "";
+            document.getElementById("optC").value = "";
+            document.getElementById("optD").value = "";
+            document.getElementById("correctAnswer").value = "";
+            await refreshQuestions();
+            updateStats();
+        } catch(e) {
+            document.getElementById("addMsg").innerHTML = "❌ Error adding question";
+        }
+        setTimeout(() => document.getElementById("addMsg").innerHTML = "", 2000);
     }
     
-    // ========== REST OF FUNCTIONS ==========
+    async function deleteAllQuestions() {
+        if(confirm("⚠️ PERMANENTLY delete ALL questions?")) {
+            await fetch(`${SCRIPT_URL}?action=delete`);
+            await refreshQuestions();
+            updateStats();
+            alert("All questions deleted.");
+        }
+    }
+    
+    async function deleteSingleQuestion(idx) {
+        if(confirm("Delete this question?")) {
+            await fetch(`${SCRIPT_URL}?action=deleteSingle&index=${idx}`);
+            await refreshQuestions();
+            updateStats();
+        }
+    }
+    
+    async function refreshQuestions() {
+        await loadQuestions();
+        displayQuestionsList();
+        updateStats();
+    }
+    
+    function displayQuestionsList() {
+        const qList = document.getElementById("questionList");
+        if(!qList) return;
+        if(questions.length === 0) {
+            qList.innerHTML = "<p>📭 No questions found. Upload questions using the Upload tab.</p>";
+        } else {
+            qList.innerHTML = questions.map((q, i) => `
+                <div class="question-card">
+                    <div>
+                        <strong>Q${i+1}: ${escapeHtml(q.q)}</strong><br>
+                        A: ${escapeHtml(q.options[0])} | B: ${escapeHtml(q.options[1])} | C: ${escapeHtml(q.options[2])} | D: ${escapeHtml(q.options[3])}<br>
+                        <span style="color:#0f7b3a;">✓ Correct: ${escapeHtml(q.answer)}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteSingleQuestion(${i})">🗑️ Delete</button>
+                </div>
+            `).join("");
+        }
+    }
+    
+    // ========== SCORE FUNCTIONS ==========
+    async function loadScores() {
+        try {
+            const res = await fetch(`${SCRIPT_URL}?action=getScores`);
+            allScores = await res.json();
+            displayScores();
+            updateStats();
+        } catch(e) {}
+    }
+    
+    function displayScores() {
+        const tbody = document.getElementById("scoresBody");
+        if(!tbody) return;
+        const search = document.getElementById("scoreSearch")?.value.toLowerCase() || "";
+        const filtered = allScores.filter(s => s.username.toLowerCase().includes(search));
+        tbody.innerHTML = filtered.map(s => `
+            <tr>
+                <td><strong>${escapeHtml(s.username)}</strong></td>
+                <td>${s.score}</td>
+                <td>${s.total}</td>
+                <td>${s.percentage}%</td>
+                <td class="${parseFloat(s.percentage) >= 50 ? 'pass' : 'fail'}">${s.status}</td>
+                <td>${new Date(s.examDate).toLocaleDateString()}</td>
+            </tr>
+        `).join("") || "<tr><td colspan='6'>📭 No records</td></tr>";
+    }
+    
+    // ========== STUDENT FUNCTIONS ==========
     function registerUser() {
         let u = document.getElementById("regUser").value.trim();
         let p = document.getElementById("regPass").value;
@@ -521,184 +782,281 @@
         }
         let students = JSON.parse(localStorage.getItem("students") || "[]");
         if(students.find(s => s.username === u)) { alert("Username exists"); return; }
-        students.push({username: u, password: p});
+        students.push({username: u, password: p, registered: new Date().toISOString()});
         localStorage.setItem("students", JSON.stringify(students));
-        alert("Account created!");
+        alert("✅ Account created!");
         showStudentLoginSection();
         updateStats();
     }
     
-    async function loadQuestions() {
-        try {
-            let resp = await fetch(SCRIPT_URL);
-            let data = await resp.json();
-            questions = Array.isArray(data) ? data : [];
-            document.getElementById("syncStatus").innerHTML = `✅ ${questions.length} questions | Settings synced`;
-            return questions;
-        } catch(e) { return questions; }
+    function studentLogin() {
+        let students = JSON.parse(localStorage.getItem("students") || "[]");
+        let u = document.getElementById("sUser").value.trim();
+        let p = document.getElementById("sPass").value;
+        let student = students.find(s => s.username === u && s.password === p);
+        if(student) {
+            currentUser = u;
+            currentPassword = p;
+            document.getElementById("studentName").innerHTML = u;
+            document.getElementById("studentLogin").classList.add("hidden");
+            document.getElementById("studentDashboard").classList.remove("hidden");
+        } else {
+            alert("❌ Invalid login");
+        }
+    }
+    
+    function showStudentExam() {
+        document.getElementById("studentExamArea").classList.remove("hidden");
+        document.getElementById("studentHistoryArea").classList.add("hidden");
+        if(!questions.length) {
+            loadQuestions().then(() => startExam());
+        } else {
+            startExam();
+        }
     }
     
     function startExam() {
         if(!examEnabled) { alert("Exam is currently disabled"); return; }
-        if(!questions.length) { alert("No questions"); return; }
+        if(!questions.length) { alert("No questions available"); return; }
         document.getElementById("examDisabledMessage").classList.add("hidden");
         document.getElementById("examContent").classList.remove("hidden");
-        currentIdx = 0; answers = {}; examSubmitted = false; examActive = true;
-        questions.forEach((_,i) => answers[i] = null);
+        currentIdx = 0;
+        answers = {};
+        examSubmitted = false;
+        examActive = true;
+        questions.forEach((_, i) => answers[i] = null);
         timeLeft = Math.ceil(questions.length * 1.5) * 60;
         if(timer) clearInterval(timer);
         timer = setInterval(() => {
             if(!examActive || examSubmitted) return;
-            if(timeLeft <= 0) { clearInterval(timer); alert("Time's up!"); submitExam(); }
-            else { timeLeft--; updateTimer(); }
+            if(timeLeft <= 0) {
+                clearInterval(timer);
+                alert("⏰ Time's up!");
+                submitExam();
+            } else {
+                timeLeft--;
+                updateTimer();
+            }
         }, 1000);
         updateTimer();
         showQuestion();
     }
     
-    function updateTimer() { let m=Math.floor(timeLeft/60), s=timeLeft%60; document.getElementById("timerDisplay").innerHTML=`⏱️ Time Left: ${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; }
+    function updateTimer() {
+        let m = Math.floor(timeLeft / 60);
+        let s = timeLeft % 60;
+        document.getElementById("timerDisplay").innerHTML = `⏱️ Time Left: ${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
     
     function showQuestion() {
         let q = questions[currentIdx];
-        document.getElementById("questionCounter").innerHTML = `<span style="background:#1e3c72; padding:8px 24px; border-radius:40px; color:white;">Q${currentIdx+1}/${questions.length}</span>`;
+        document.getElementById("questionCounter").innerHTML = `<span style="background:#1e3c72; padding:8px 24px; border-radius:40px; color:white;">Question ${currentIdx+1}/${questions.length}</span>`;
         document.getElementById("questionText").innerHTML = q.q;
         let html = "";
-        ["A","B","C","D"].forEach((l,i) => {
+        ["A","B","C","D"].forEach((l, i) => {
             let selected = answers[currentIdx] === q.options[i];
-            html += `<div onclick="selectAnswer('${escapeHtml(q.options[i]).replace(/'/g,"\\'")}')" style="margin:10px 0; padding:14px; background:${selected?'#eef2ff':'white'}; border:2px solid ${selected?'#1e3c72':'#e2e8f0'}; border-radius:60px; cursor:pointer;">${l}. ${escapeHtml(q.options[i])}</div>`;
+            html += `<div onclick="selectAnswer('${escapeHtml(q.options[i]).replace(/'/g, "\\'")}')" style="margin:10px 0; padding:14px; background:${selected ? '#eef2ff' : 'white'}; border:2px solid ${selected ? '#1e3c72' : '#e2e8f0'}; border-radius:60px; cursor:pointer;">${l}. ${escapeHtml(q.options[i])}</div>`;
         });
         document.getElementById("optionsContainer").innerHTML = html;
-        let answered = Object.values(answers).filter(v=>v).length;
-        document.getElementById("questionDots").innerHTML = questions.map((_,i)=>`<span class="question-dot ${answers[i]?'answered':'unanswered'} ${i===currentIdx?'current':''}" onclick="jumpTo(${i})">${i+1}</span>`).join("");
-        document.getElementById("submitContainer").classList.toggle("hidden", currentIdx !== questions.length-1);
+        let answered = Object.values(answers).filter(v => v).length;
+        document.getElementById("questionDots").innerHTML = questions.map((_, i) => `<span class="question-dot ${answers[i] ? 'answered' : 'unanswered'} ${i === currentIdx ? 'current' : ''}" onclick="jumpTo(${i})">${i+1}</span>`).join("");
+        document.getElementById("submitContainer").classList.toggle("hidden", currentIdx !== questions.length - 1);
     }
     
-    function selectAnswer(ans) { if(!examSubmitted && examActive) { answers[currentIdx]=ans; showQuestion(); } }
-    function jumpTo(i) { if(!examSubmitted && examActive) { currentIdx=i; showQuestion(); } }
-    function prevQuestion() { if(currentIdx>0 && !examSubmitted) { currentIdx--; showQuestion(); } }
-    function nextQuestion() { if(currentIdx<questions.length-1 && !examSubmitted) { currentIdx++; showQuestion(); } }
-    
-    function displayFullReview() {
-        let score = 0;
-        questions.forEach((q,i) => { if(answers[i] === q.answer) score++; });
-        let percent = (score/questions.length*100).toFixed(1);
-        let html = `<h3>📝 Exam Review</h3><p><strong>Score: ${score}/${questions.length} (${percent}%)</strong></p><hr>`;
-        questions.forEach((q,i) => {
-            const userAnswer = answers[i] || "Not answered";
-            const isCorrect = (userAnswer === q.answer);
-            html += `<div class="review-card">
-                <div><strong>Q${i+1}:</strong> ${escapeHtml(q.q)}</div>
-                <div><strong>Your answer:</strong> ${escapeHtml(userAnswer)} ${isCorrect ? '✅' : '❌'}</div>
-                <div><strong>Correct answer:</strong> ${escapeHtml(q.answer)}</div>
-                <div style="font-size:12px; margin-top:8px;">A: ${escapeHtml(q.options[0])} | B: ${escapeHtml(q.options[1])} | C: ${escapeHtml(q.options[2])} | D: ${escapeHtml(q.options[3])}</div>
-            </div>`;
-        });
-        document.getElementById("reviewModal").innerHTML = html;
-    }
-    
-    function toggleReview() { let m = document.getElementById("reviewModal"); if(m.classList.contains("hidden")) { displayFullReview(); m.classList.remove("hidden"); } else { m.classList.add("hidden"); } }
+    function selectAnswer(ans) { if(!examSubmitted && examActive) { answers[currentIdx] = ans; showQuestion(); } }
+    function jumpTo(i) { if(!examSubmitted && examActive) { currentIdx = i; showQuestion(); } }
+    function prevQuestion() { if(currentIdx > 0 && !examSubmitted) { currentIdx--; showQuestion(); } }
+    function nextQuestion() { if(currentIdx < questions.length - 1 && !examSubmitted) { currentIdx++; showQuestion(); } }
     
     async function submitExam() {
         if(examSubmitted) return;
-        clearInterval(timer); examSubmitted = true; examActive = false;
-        let score = questions.filter((q,i)=>answers[i]===q.answer).length;
-        let percent = (score/questions.length)*100;
-        await fetch(`${SCRIPT_URL}?action=submitScore&username=${encodeURIComponent(currentUser)}&password=${encodeURIComponent(currentPassword)}&score=${score}&total=${questions.length}&percentage=${percent.toFixed(1)}&status=${percent>=50?"PASS":"FAIL"}&subject=General`);
-        document.getElementById("result").innerHTML = `<div style="background:${percent>=50?'#d1fae5':'#fee2e2'}; padding:20px; border-radius:32px; text-align:center;"><h2>${percent>=50?'🎉 PASSED!':'📉 FAILED!'}</h2><p style="font-size:2rem;">${score}/${questions.length} (${percent.toFixed(1)}%)</p></div>`;
+        clearInterval(timer);
+        examSubmitted = true;
+        examActive = false;
+        let score = questions.filter((q, i) => answers[i] === q.answer).length;
+        let percent = (score / questions.length) * 100;
+        await fetch(`${SCRIPT_URL}?action=submitScore&username=${encodeURIComponent(currentUser)}&password=${encodeURIComponent(currentPassword)}&score=${score}&total=${questions.length}&percentage=${percent.toFixed(1)}&status=${percent >= 50 ? "PASS" : "FAIL"}&subject=General`);
+        document.getElementById("result").innerHTML = `<div style="background:${percent >= 50 ? '#d1fae5' : '#fee2e2'}; padding:20px; border-radius:32px; text-align:center;"><h2>${percent >= 50 ? '🎉 PASSED!' : '📉 FAILED!'}</h2><p style="font-size:2rem;">${score}/${questions.length} (${percent.toFixed(1)}%)</p></div>`;
         document.getElementById("submitContainer").classList.add("hidden");
+        
         const reviewSec = document.getElementById("reviewSection");
         if(answersEnabled) {
-            reviewSec.innerHTML = `<button class="view-answer-btn" onclick="toggleReview()">📋 REVIEW ANSWERS</button><div id="reviewModal" class="hidden review-modal"></div>`;
+            reviewSec.innerHTML = `<button class="view-answer-btn" onclick="showReview()">📋 REVIEW ANSWERS</button><div id="reviewModal" class="hidden review-modal"></div>`;
             reviewSec.classList.remove("hidden");
         } else {
             reviewSec.innerHTML = `<p style="text-align:center; padding:15px; background:#fef9e3; border-radius:24px;">📌 Answer review is currently disabled.</p>`;
             reviewSec.classList.remove("hidden");
         }
-        await loadScores(); updateStats();
+        await loadScores();
+        updateStats();
     }
     
-    async function uploadFile(replaceMode) {
-        let file = document.getElementById("fileInput").files[0];
-        if(!file) { alert("Select file"); return; }
-        let progress = document.getElementById("uploadProgress");
-        let text = await file.text();
-        let blocks = text.split(/\n\s*\n/);
-        let parsed = [];
-        for(let block of blocks) {
-            if(!block.trim()) continue;
-            let lines = block.split("\n");
-            let q = "", opts = ["","","",""], ans = "";
-            for(let line of lines) {
-                line = line.trim();
-                if(line.startsWith("Q:")) q = line.substring(2).trim();
-                else if(line.startsWith("A:")) opts[0] = line.substring(2).trim();
-                else if(line.startsWith("B:")) opts[1] = line.substring(2).trim();
-                else if(line.startsWith("C:")) opts[2] = line.substring(2).trim();
-                else if(line.startsWith("D:")) opts[3] = line.substring(2).trim();
-                else if(line.startsWith("ANS:")) ans = line.substring(4).trim().toUpperCase();
-            }
-            if(q && opts[0] && opts[1] && opts[2] && opts[3] && "ABCD".includes(ans)) {
-                parsed.push({question: q, optA: opts[0], optB: opts[1], optC: opts[2], optD: opts[3], answer: opts["ABCD".indexOf(ans)]});
-            }
+    function showReview() {
+        let modal = document.getElementById("reviewModal");
+        if(modal.classList.contains("hidden")) {
+            let score = questions.filter((q, i) => answers[i] === q.answer).length;
+            let percent = (score / questions.length * 100).toFixed(1);
+            let html = `<h3>📝 Exam Review</h3><p><strong>Score: ${score}/${questions.length} (${percent}%)</strong></p><hr>`;
+            questions.forEach((q, i) => {
+                let userAnswer = answers[i] || "Not answered";
+                let isCorrect = (userAnswer === q.answer);
+                html += `<div class="review-card">
+                    <div><strong>Q${i+1}:</strong> ${escapeHtml(q.q)}</div>
+                    <div><strong>Your answer:</strong> ${escapeHtml(userAnswer)} ${isCorrect ? '✅' : '❌'}</div>
+                    <div><strong>Correct answer:</strong> ${escapeHtml(q.answer)}</div>
+                    <div style="font-size:12px; margin-top:8px;">A: ${escapeHtml(q.options[0])} | B: ${escapeHtml(q.options[1])} | C: ${escapeHtml(q.options[2])} | D: ${escapeHtml(q.options[3])}</div>
+                </div>`;
+            });
+            modal.innerHTML = html;
+            modal.classList.remove("hidden");
+        } else {
+            modal.classList.add("hidden");
         }
-        if(parsed.length === 0) { progress.innerHTML = "<span style='color:red'>No valid questions</span>"; return; }
-        if(replaceMode) { await fetch(`${SCRIPT_URL}?action=delete`); }
-        let success = 0;
-        for(let p of parsed) {
-            let url = `${SCRIPT_URL}?action=add&question=${encodeURIComponent(p.question)}&optA=${encodeURIComponent(p.optA)}&optB=${encodeURIComponent(p.optB)}&optC=${encodeURIComponent(p.optC)}&optD=${encodeURIComponent(p.optD)}&answer=${encodeURIComponent(p.answer)}`;
-            try { await fetch(url); success++; } catch(e) {}
+    }
+    
+    async function loadStudentHistory() {
+        await loadScores();
+        let userScores = allScores.filter(s => s.username === currentUser);
+        document.getElementById("studentHistoryList").innerHTML = userScores.map((s, i) => `
+            <div class="score-card">
+                <div><strong>Attempt ${i+1}</strong> - ${new Date(s.examDate).toLocaleString()}</div>
+                <div>Score: ${s.score}/${s.total} (${s.percentage}%) <span class="${parseFloat(s.percentage) >= 50 ? 'pass' : 'fail'}">${s.status}</span></div>
+            </div>
+        `).join("") || "<p>📭 No exams yet</p>";
+    }
+    
+    function showStudentHistory() {
+        document.getElementById("studentExamArea").classList.add("hidden");
+        document.getElementById("studentHistoryArea").classList.remove("hidden");
+        loadStudentHistory();
+        if(timer) clearInterval(timer);
+    }
+    
+    // ========== ADMIN FUNCTIONS ==========
+    function loadStudentsList() {
+        let students = JSON.parse(localStorage.getItem("students") || "[]");
+        let sl = document.getElementById("studentList");
+        if(!sl) return;
+        sl.innerHTML = students.map((s, i) => `
+            <div class="student-card">
+                <div><strong>${escapeHtml(s.username)}</strong><br><small>Registered: ${new Date(s.registered).toLocaleDateString()}</small></div>
+                <button class="delete-btn" onclick="deleteStudent(${i})">Delete</button>
+            </div>
+        `).join("") || "<p>👥 No students registered</p>";
+    }
+    
+    function deleteStudent(i) {
+        let students = JSON.parse(localStorage.getItem("students") || "[]");
+        students.splice(i, 1);
+        localStorage.setItem("students", JSON.stringify(students));
+        loadStudentsList();
+        updateStats();
+    }
+    
+    function deleteAllStudents() {
+        if(confirm("Delete ALL students?")) {
+            localStorage.setItem("students", "[]");
+            loadStudentsList();
+            updateStats();
         }
-        progress.innerHTML = `<span style="color:green;">✅ Uploaded ${success}/${parsed.length}</span>`;
-        setTimeout(()=>progress.innerHTML="",3000);
-        refreshQuestions(); updateStats();
     }
     
-    async function addQuestion() {
-        let q = document.getElementById("newQuestion").value.trim();
-        let a = document.getElementById("optA").value.trim();
-        let b = document.getElementById("optB").value.trim();
-        let c = document.getElementById("optC").value.trim();
-        let d = document.getElementById("optD").value.trim();
-        let cor = document.getElementById("correctAnswer").value;
-        if(!q || !a || !b || !c || !d || !cor) { document.getElementById("addMsg").innerHTML = "❌ Fill all"; return; }
-        let ans = {A:a,B:b,C:c,D:d}[cor];
-        await fetch(`${SCRIPT_URL}?action=add&question=${encodeURIComponent(q)}&optA=${encodeURIComponent(a)}&optB=${encodeURIComponent(b)}&optC=${encodeURIComponent(c)}&optD=${encodeURIComponent(d)}&answer=${encodeURIComponent(ans)}`);
-        document.getElementById("addMsg").innerHTML = "✅ Added!";
-        setTimeout(()=>document.getElementById("addMsg").innerHTML="",2000);
-        document.getElementById("newQuestion").value = "";
-        document.getElementById("optA").value = "";
-        document.getElementById("optB").value = "";
-        document.getElementById("optC").value = "";
-        document.getElementById("optD").value = "";
-        refreshQuestions(); updateStats();
+    function filterScores() { displayScores(); }
+    
+    function adminLogin() {
+        let u = document.getElementById("aUser").value;
+        let p = document.getElementById("aPass").value;
+        if(u === "admin" && p === "tola@121212") {
+            document.getElementById("adminLogin").classList.add("hidden");
+            document.getElementById("adminDashboard").classList.remove("hidden");
+            refreshQuestions();
+            loadStudentsList();
+            loadScores();
+            loadSettings();
+        } else {
+            alert("❌ Wrong admin credentials");
+        }
     }
     
-    async function deleteAllQuestions() { if(confirm("Delete ALL?")) { await fetch(`${SCRIPT_URL}?action=delete`); refreshQuestions(); updateStats(); } }
-    async function deleteSingleQuestion(i) { if(confirm("Delete?")) { await fetch(`${SCRIPT_URL}?action=deleteSingle&index=${i}`); refreshQuestions(); updateStats(); } }
-    async function loadScores() { try { let r=await fetch(`${SCRIPT_URL}?action=getScores`); allScores=await r.json(); displayScores(); updateStats(); } catch(e){} }
-    function displayScores() { let t=document.getElementById("scoresBody"); if(!t) return; let s=document.getElementById("scoreSearch")?.value.toLowerCase()||""; let f=allScores.filter(x=>x.username.toLowerCase().includes(s)); t.innerHTML=f.map(x=>`<tr><td><strong>${escapeHtml(x.username)}</strong></td><td>${x.score}</td><td>${x.total}</td><td>${x.percentage}%</td><td class="${parseFloat(x.percentage)>=50?'pass':'fail'}">${x.status}</td><td>${new Date(x.examDate).toLocaleDateString()}</td></tr>`).join("")||"<tr><td colspan='6'>No records</td></tr>"; }
-    async function refreshQuestions() { await loadQuestions(); displayQuestionsList(); updateStats(); }
-    function displayQuestionsList() { let ql=document.getElementById("questionList"); if(!ql) return; if(!questions.length) ql.innerHTML="<p>No questions</p>"; else ql.innerHTML=questions.map((q,i)=>`<div class="question-card"><div><strong>Q${i+1}: ${q.q}</strong><br>A:${q.options[0]} | B:${q.options[1]} | C:${q.options[2]} | D:${q.options[3]}<br><span style="color:green;">✓ ${q.answer}</span></div><button class="delete-btn" onclick="deleteSingleQuestion(${i})">Delete</button></div>`).join(""); }
-    function loadStudentsList() { let s=JSON.parse(localStorage.getItem("students")||"[]"); let sl=document.getElementById("studentList"); if(!sl) return; sl.innerHTML=s.map((s,i)=>`<div class="student-card"><div><strong>${escapeHtml(s.username)}</strong></div><button class="delete-btn" onclick="deleteStudent(${i})">Delete</button></div>`).join("")||"<p>No students</p>"; }
-    function deleteStudent(i){ let s=JSON.parse(localStorage.getItem("students")||"[]"); s.splice(i,1); localStorage.setItem("students",JSON.stringify(s)); loadStudentsList(); updateStats(); }
-    function deleteAllStudents(){ if(confirm("Delete ALL students?")){ localStorage.setItem("students","[]"); loadStudentsList(); updateStats(); } }
-    function filterScores(){ displayScores(); }
-    function studentLogin(){ let s=JSON.parse(localStorage.getItem("students")||"[]"); let u=document.getElementById("sUser").value.trim(), p=document.getElementById("sPass").value; let student=s.find(x=>x.username===u && x.password===p); if(student){ currentUser=u; currentPassword=p; document.getElementById("studentName").innerHTML=u; document.getElementById("studentLogin").classList.add("hidden"); document.getElementById("studentDashboard").classList.remove("hidden"); } else alert("Invalid login"); }
-    async function loadStudentHistory(){ await loadScores(); let us=allScores.filter(s=>s.username===currentUser); document.getElementById("studentHistoryList").innerHTML=us.map((s,i)=>`<div class="score-card"><div><strong>Attempt ${i+1}</strong> - ${new Date(s.examDate).toLocaleString()}</div><div>Score: ${s.score}/${s.total} (${s.percentage}%) <span class="${parseFloat(s.percentage)>=50?'pass':'fail'}">${s.status}</span></div></div>`).join("")||"<p>No exams</p>"; }
-    function adminLogin(){ let u=document.getElementById("aUser").value, p=document.getElementById("aPass").value; if(u==="admin" && p==="tola@121212"){ document.getElementById("adminLogin").classList.add("hidden"); document.getElementById("adminDashboard").classList.remove("hidden"); refreshQuestions(); loadStudentsList(); loadScores(); loadSettings(); } else alert("Wrong credentials"); }
-    function showStudentExam(){ document.getElementById("studentExamArea").classList.remove("hidden"); document.getElementById("studentHistoryArea").classList.add("hidden"); if(!questions.length) loadQuestions().then(()=>startExam()); else startExam(); }
-    function showStudentHistory(){ document.getElementById("studentExamArea").classList.add("hidden"); document.getElementById("studentHistoryArea").classList.remove("hidden"); loadStudentHistory(); if(timer) clearInterval(timer); }
-    function showAdminTab(tab,el){ document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); document.querySelectorAll('.admin-content').forEach(c=>c.classList.add('hidden')); document.getElementById(`admin${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); if(tab==='questions') refreshQuestions(); if(tab==='scores') loadScores(); if(tab==='students') loadStudentsList(); }
-    async function updateStats(){ let q=questions.length, s=JSON.parse(localStorage.getItem("students")||"[]").length; document.getElementById("homeTotalQuestions").innerHTML=q; document.getElementById("homeTotalStudents").innerHTML=s; document.getElementById("homeTotalExams").innerHTML=allScores.length; document.getElementById("adminTotalQuestions").innerHTML=q; document.getElementById("adminTotalStudents").innerHTML=s; document.getElementById("adminTotalExams").innerHTML=allScores.length; }
-    function escapeHtml(str){ return String(str).replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; return '&gt;'; }); }
-    function showHomeSection(){ document.getElementById('homeSection').classList.remove('hidden'); document.getElementById('studentSection').classList.add('hidden'); document.getElementById('adminSection').classList.add('hidden'); if(timer) clearInterval(timer); }
-    function showStudentSection(){ document.getElementById('homeSection').classList.add('hidden'); document.getElementById('studentSection').classList.remove('hidden'); document.getElementById('adminSection').classList.add('hidden'); showStudentLoginSection(); }
-    function showAdminSection(){ document.getElementById('homeSection').classList.add('hidden'); document.getElementById('studentSection').classList.add('hidden'); document.getElementById('adminSection').classList.remove('hidden'); document.getElementById('adminLogin').classList.remove('hidden'); document.getElementById('adminDashboard').classList.add('hidden'); }
-    function showStudentLoginSection(){ document.getElementById('studentLogin').classList.remove('hidden'); document.getElementById('studentRegister').classList.add('hidden'); document.getElementById('studentDashboard').classList.add('hidden'); if(timer) clearInterval(timer); }
-    function showStudentRegister(){ document.getElementById('studentLogin').classList.add('hidden'); document.getElementById('studentRegister').classList.remove('hidden'); }
-    function logout(){ if(confirm("Exit?")) location.reload(); }
+    function showAdminTab(tab, el) {
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById(`admin${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.remove('hidden');
+        if(tab === 'questions') refreshQuestions();
+        if(tab === 'scores') loadScores();
+        if(tab === 'students') loadStudentsList();
+    }
     
-    (async function init(){ await loadQuestions(); await loadScores(); await loadSettings(); updateStats(); startSettingsSync(); })();
+    async function updateStats() {
+        let q = questions.length;
+        let s = JSON.parse(localStorage.getItem("students") || "[]").length;
+        document.getElementById("homeTotalQuestions").innerHTML = q;
+        document.getElementById("homeTotalStudents").innerHTML = s;
+        document.getElementById("homeTotalExams").innerHTML = allScores.length;
+        document.getElementById("adminTotalQuestions").innerHTML = q;
+        document.getElementById("adminTotalStudents").innerHTML = s;
+        document.getElementById("adminTotalExams").innerHTML = allScores.length;
+    }
+    
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    function showHomeSection() {
+        document.getElementById('homeSection').classList.remove('hidden');
+        document.getElementById('studentSection').classList.add('hidden');
+        document.getElementById('adminSection').classList.add('hidden');
+        if(timer) clearInterval(timer);
+    }
+    
+    function showStudentSection() {
+        document.getElementById('homeSection').classList.add('hidden');
+        document.getElementById('studentSection').classList.remove('hidden');
+        document.getElementById('adminSection').classList.add('hidden');
+        showStudentLoginSection();
+    }
+    
+    function showAdminSection() {
+        document.getElementById('homeSection').classList.add('hidden');
+        document.getElementById('studentSection').classList.add('hidden');
+        document.getElementById('adminSection').classList.remove('hidden');
+        document.getElementById('adminLogin').classList.remove('hidden');
+        document.getElementById('adminDashboard').classList.add('hidden');
+    }
+    
+    function showStudentLoginSection() {
+        document.getElementById('studentLogin').classList.remove('hidden');
+        document.getElementById('studentRegister').classList.add('hidden');
+        document.getElementById('studentDashboard').classList.add('hidden');
+        if(timer) clearInterval(timer);
+    }
+    
+    function showStudentRegister() {
+        document.getElementById('studentLogin').classList.add('hidden');
+        document.getElementById('studentRegister').classList.remove('hidden');
+    }
+    
+    function logout() {
+        if(confirm("Exit session?")) location.reload();
+    }
+    
+    // Start periodic settings sync
+    setInterval(async () => {
+        await loadSettings();
+    }, 5000);
+    
+    (async function init() {
+        await loadQuestions();
+        await loadScores();
+        await loadSettings();
+        updateStats();
+    })();
 </script>
 </body>
 </html>
